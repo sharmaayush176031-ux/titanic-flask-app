@@ -11,9 +11,12 @@ df = pd.read_csv("train.csv")
 # ---------------- SELECT FEATURES ----------------
 df = df[['Survived', 'Pclass', 'Sex', 'Age', 'Fare']]
 
-# ---------------- FIX MISSING VALUES (IMPORTANT FIX) ----------------
-df['Age'] = df['Age'].fillna(df['Age'].mean())
-df['Fare'] = df['Fare'].fillna(df['Fare'].mean())
+# ---------------- STRONG CLEANING (IMPORTANT FIX) ----------------
+df['Age'] = df['Age'].fillna(df['Age'].median())
+df['Fare'] = df['Fare'].fillna(df['Fare'].median())
+
+# EXTRA SAFETY: remove any remaining NaN rows
+df = df.dropna()
 
 # ---------------- ENCODE SEX ----------------
 le = LabelEncoder()
@@ -23,21 +26,17 @@ df['Sex'] = le.fit_transform(df['Sex'])
 X = df[['Pclass', 'Sex', 'Age', 'Fare']]
 y = df['Survived']
 
-# IMPORTANT: remove any remaining NaN rows (safe fix)
-data = pd.concat([X, y], axis=1).dropna()
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-X = data[['Pclass', 'Sex', 'Age', 'Fare']]
-y = data['Survived']
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-# ---------------- MODEL 1: RANDOM FOREST ----------------
+# ---------------- RANDOM FOREST ----------------
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
 rf_model.fit(X_train, y_train)
 
 print("Random Forest Accuracy:", rf_model.score(X_test, y_test))
 
-# ---------------- MODEL 2: NAIVE BAYES ----------------
+# ---------------- NAIVE BAYES ----------------
 nb_model = GaussianNB()
 nb_model.fit(X_train, y_train)
 
