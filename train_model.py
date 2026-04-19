@@ -1,55 +1,46 @@
 import pandas as pd
+import numpy as np
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
-import numpy as np
 import pickle
 
 # ---------------- LOAD DATA ----------------
 df = pd.read_csv("train.csv")
 
-# ---------------- KEEP ONLY REQUIRED COLUMNS ----------------
+# ---------------- SELECT FEATURES ----------------
 df = df[['Survived', 'Pclass', 'Sex', 'Age', 'Fare']]
-
-# ---------------- FORCE CLEANING (MOST IMPORTANT FIX) ----------------
-
-# Convert to numeric (kills hidden bad values)
-df['Age'] = pd.to_numeric(df['Age'], errors='coerce')
-df['Fare'] = pd.to_numeric(df['Fare'], errors='coerce')
-
-# Fill missing values
-df['Age'] = df['Age'].fillna(df['Age'].median())
-df['Fare'] = df['Fare'].fillna(df['Fare'].median())
-
-# Remove ANY remaining bad rows
-df = df.replace([np.inf, -np.inf], np.nan)
-df = df.dropna()
 
 # ---------------- ENCODE SEX ----------------
 le = LabelEncoder()
 df['Sex'] = le.fit_transform(df['Sex'])
 
-# ---------------- FEATURES ----------------
+# ---------------- SPLIT X AND Y ----------------
 X = df[['Pclass', 'Sex', 'Age', 'Fare']]
 y = df['Survived']
 
-# FINAL SAFETY CHECK (VERY IMPORTANT)
-X = X.fillna(0)
-y = y.fillna(0)
+# ---------------- IMPUTER (IMPORTANT FIX) ----------------
+imputer = SimpleImputer(strategy="median")
+X = imputer.fit_transform(X)
 
-# ---------------- SPLIT DATA ----------------
+# ---------------- FINAL SAFETY CHECK ----------------
+X = np.nan_to_num(X)
+
+# ---------------- TRAIN TEST SPLIT ----------------
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# ---------------- MODEL 1 ----------------
+# ---------------- RANDOM FOREST ----------------
 rf = RandomForestClassifier(n_estimators=100, random_state=42)
 rf.fit(X_train, y_train)
 
 print("Random Forest Accuracy:", rf.score(X_test, y_test))
 
-# ---------------- MODEL 2 ----------------
+# ---------------- NAIVE BAYES ----------------
 nb = GaussianNB()
 nb.fit(X_train, y_train)
 
